@@ -3,6 +3,8 @@ import threading
 import socket
 import time
 from cache import Cache
+import requests
+from wss import RECIEVER_APP_PORT, WSS_PORT
 
 REGISTRATION_INTERVAL_SECONDS = 10
 APP_PORT = 5000
@@ -13,7 +15,7 @@ app = Flask(__name__)
 def get_server_address():
     hostname = socket.gethostname()
     ip_address = socket.gethostbyname(hostname)
-    return f"{ip_address}:{APP_PORT}"
+    return ip_address
 
 
 def register_server():
@@ -69,10 +71,14 @@ def proxy(subpath):
         if not worker_address:
             return jsonify({"error": f"No active workers found for prefix: {prefix}"}), 404
         
-        url = f"http://{worker_address}/{subpath}"
-        print(f"Proxying request to {url=}")
-        resp = request.get(url)
-        return resp.json()
+        message = {
+            "prefix": prefix,
+            "subpath": subpath,
+        }
+        response = requests.post(f"http://{worker_address}:{RECIEVER_APP_PORT}/send", json=message)
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to send proxy request to WebSocket"}), 500
+        return response.json()
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
@@ -93,7 +99,7 @@ def create_proxy():
         for key in server_keys[:MAX_REDUNDANCY_FACTOR]:
             worker_address = cache.get(key)
             if worker_address:
-                workers.append(worker_address)
+                workers.append(f"{worker_address}:{WSS_PORT}")
                 worker_address_keys.append(key)
 
         if len(workers) < MAX_REDUNDANCY_FACTOR:
