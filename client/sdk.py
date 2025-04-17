@@ -21,14 +21,6 @@ def validate_prefix(prefix):
 class SDK:
     port: int
     prefix: str
-    worker_connections: list = None
-        
-    def __post_init__(self):
-        if self.worker_connections is None:
-            self.worker_connections = []
-        
-    def home(self):
-        return jsonify({"status": "running", "prefix": self.prefix})
     
     async def connect_to_worker(self, worker_address):
         try:
@@ -56,7 +48,6 @@ class SDK:
             
         except Exception as e:
             print(f"Error setting up worker connections: {e}")
-            return []
     
     def run(self):
         # # Start WebSocket connections in a separate thread
