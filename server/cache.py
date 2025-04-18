@@ -48,7 +48,7 @@ class Cache:
     def set(self, key, value, ttl=None):
         try:
             if ttl:
-                result = self.loop.run_until_complete(self.client.set(key, value, ex=ttl))
+                result = self.loop.run_until_complete(self.client.set(key, value, expiry=ttl))
             else:
                 result = self.loop.run_until_complete(self.client.set(key, value))
             return result

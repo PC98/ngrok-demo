@@ -109,7 +109,7 @@ def create_proxy():
     except Exception as e:
         print(f"Error getting workers: {e}")
         return jsonify({"error": str(e)}), 500
-    
+    print(workers)
     return jsonify({"workers": workers})
 
 @app.teardown_appcontext
