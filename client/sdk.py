@@ -68,7 +68,7 @@ class SDK:
         ws_thread.start()
         
         app = create_app()
-        app.run(host='0.0.0.0', port=self.port)
+        app.run(port=self.port)
 
 def create_sdk(port, prefix):
     sdk = SDK(port, prefix)
