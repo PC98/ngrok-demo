@@ -8,7 +8,7 @@ from wss import RECIEVER_APP_PORT, WSS_PORT
 
 REGISTRATION_INTERVAL_SECONDS = 10
 APP_PORT = 5000
-MAX_REDUNDANCY_FACTOR = 1
+MAX_REDUNDANCY_FACTOR = 2
 
 app = Flask(__name__)
 
@@ -142,4 +142,4 @@ if __name__ == '__main__':
     registration_thread = threading.Thread(target=register_server, daemon=True)
     registration_thread.start()
     
-    app.run(debug=True, port=APP_PORT)
+    app.run(debug=True, port=APP_PORT, host='0.0.0.0')
