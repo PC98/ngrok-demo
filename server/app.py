@@ -8,7 +8,7 @@ from wss import RECIEVER_APP_PORT, WSS_PORT
 
 REGISTRATION_INTERVAL_SECONDS = 10
 APP_PORT = 5000
-MAX_REDUNDANCY_FACTOR = 2
+MAX_REDUNDANCY_FACTOR = 1
 
 app = Flask(__name__)
 
@@ -73,7 +73,11 @@ def proxy(subpath):
         worker_address_keys = worker_address_keys.split(",")
         worker_address = None
         for key in worker_address_keys:
+            if isinstance(key, bytes):
+                key = key.decode('utf-8')
             worker_address = cache.get(get_servers_cache_key(key))
+            if isinstance(worker_address, bytes):
+                worker_address = worker_address.decode('utf-8')
                 
         if not worker_address:
             return jsonify({"error": f"No active workers found for prefix: {prefix}"}), 404
@@ -102,10 +106,13 @@ def create_proxy():
     workers = []
     worker_address_keys = []
     try:
-        server_keys = cache.keys(get_servers_cache_key("*"))
+        server_keys = [get_servers_cache_key("54.245.174.107"), get_servers_cache_key("44.246.33.16")]
         for key in server_keys[:MAX_REDUNDANCY_FACTOR]:
             worker_address = cache.get(key)
             if worker_address:
+                # Decode bytes to string if needed
+                if isinstance(worker_address, bytes):
+                    worker_address = worker_address.decode('utf-8')
                 workers.append(f"{worker_address}:{WSS_PORT}")
                 worker_address_keys.append(key)
 
@@ -135,4 +142,4 @@ if __name__ == '__main__':
     registration_thread = threading.Thread(target=register_server, daemon=True)
     registration_thread.start()
     
-    app.run(debug=True, port=APP_PORT, host='0.0.0.0')
+    app.run(debug=True, port=APP_PORT)

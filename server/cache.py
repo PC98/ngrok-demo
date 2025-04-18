@@ -68,16 +68,22 @@ class Cache:
 
     def keys(self, pattern: str) -> List[str]:
         try:
-            # Use SCAN to get all keys matching the pattern
-            cursor = 0
             keys = []
+            cursor = "0"  # Redis SCAN starts with "0"
             while True:
-                cursor, new_keys = self.loop.run_until_complete(
-                    self.client.scan(cursor, match=pattern, count=100)
+                # Use raw Redis SCAN command
+                result = self.loop.run_until_complete(
+                    self.client.custom_command(["SCAN", cursor, "MATCH", pattern, "COUNT", "100"])
                 )
-                keys.extend(new_keys)
-                if cursor == 0:
+                if not result:
                     break
+                    
+                cursor, new_keys = result
+                keys.extend(new_keys)
+                
+                if cursor == "0":  # Redis returns "0" when done
+                    break
+                    
             return keys
         except Exception as e:
             print(f"Error getting keys for pattern {pattern}: {e}")
