@@ -11,6 +11,8 @@ from glide import (
     NodeAddress,
     RequestError,
     TimeoutError,
+    ExpiryType,
+    ExpirySet,
 )
 from dataclasses import dataclass
 
@@ -48,7 +50,7 @@ class Cache:
     def set(self, key, value, ttl=None):
         try:
             if ttl:
-                result = self.loop.run_until_complete(self.client.set(key, value, expiry=ttl))
+                result = self.loop.run_until_complete(self.client.set(key, value, expiry=ExpirySet(ExpiryType.SEC, ttl)))
             else:
                 result = self.loop.run_until_complete(self.client.set(key, value))
             return result

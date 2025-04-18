@@ -12,10 +12,15 @@ MAX_REDUNDANCY_FACTOR = 2
 
 app = Flask(__name__)
 
+private_to_public_ip_mapping = {
+    "172.31.27.126": "54.245.174.107",
+    "172.31.16.245": "44.246.33.16",
+}
+
 def get_server_address():
     hostname = socket.gethostname()
     ip_address = socket.gethostbyname(hostname)
-    return ip_address
+    return private_to_public_ip_mapping[f"{ip_address}"]
 
 
 def register_server():
@@ -24,6 +29,7 @@ def register_server():
         raise Exception("Failed to connect to cache for registration")
     
     server_address = get_server_address()
+    print(f"{server_address=}")
     while True:
         try:
             # Use a key format that allows for easy querying of all servers
@@ -64,6 +70,7 @@ def proxy(subpath):
         if not worker_address_keys:
             return jsonify({"error": f"No proxies found for prefix: {prefix}"}), 404
         
+        worker_address_keys = worker_address_keys.split(",")
         worker_address = None
         for key in worker_address_keys:
             worker_address = cache.get(get_servers_cache_key(key))
@@ -87,7 +94,7 @@ def proxy(subpath):
 def create_proxy():
     cache = get_cache()    
     data = request.get_json()
-    if not data or 'prefix' not in data or 'address' not in data:
+    if not data or 'prefix' not in data:
         return jsonify({"error": "Invalid request body"}), 400
         
     prefix = data['prefix']
@@ -105,7 +112,7 @@ def create_proxy():
         if len(workers) < MAX_REDUNDANCY_FACTOR:
             raise Exception("Not enough servers registered")
             
-        cache.set(get_proxies_cache_key(prefix), worker_address_keys)
+        cache.set(get_proxies_cache_key(prefix), ",".join(worker_address_keys))
     except Exception as e:
         print(f"Error getting workers: {e}")
         return jsonify({"error": str(e)}), 500
@@ -128,4 +135,4 @@ if __name__ == '__main__':
     registration_thread = threading.Thread(target=register_server, daemon=True)
     registration_thread.start()
     
-    app.run(debug=True, port=APP_PORT)
+    app.run(debug=True, port=APP_PORT, host='0.0.0.0')
